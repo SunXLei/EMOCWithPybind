@@ -91,6 +91,7 @@ you must set the decision bound in constructor function and implement the `CalOb
 When you have implemented your own problem, you can set it simply by:
 
 ```python
+myProblem = MyUF1(10, 2)
 parameter.problem = myProblem
 ```
 
