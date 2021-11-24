@@ -12,7 +12,8 @@
 #include "problem/problem.h"
 #include "algorithms/algorithm.h"
 
-
+#include<pybind11/pybind11.h>
+#include<pybind11/numpy.h>
 
 namespace emoc {
 
@@ -52,10 +53,12 @@ namespace emoc {
 		void InitializePopulation(Individual **pop, int pop_num);
 		void InitializeIndividual(Individual *ind);
 
+		void Init();
 		void Start();
 		bool IsTermination();
 		void DisplayMetrics();
 		void SetProblem(Problem* problem);
+		void SetInitialPop(pybind11::array_t<double>& initial_pop);
 		double RecordFileTime();
 
 	public:
@@ -88,7 +91,9 @@ namespace emoc {
 		Algorithm *algorithm_;
 
 	private:
-		void Init();
+		bool is_pop_initialized_;
+
+	private:
 		void SetDecBound();
 		void InitializeProblem();
 		void InitializeAlgorithm();

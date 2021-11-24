@@ -1,6 +1,9 @@
 #include "core/global.h"
 #include "core/individual.h"
 
+#include<pybind11/pybind11.h>
+#include<pybind11/numpy.h>
+
 namespace emoc {
 	
 
@@ -28,6 +31,8 @@ namespace emoc {
 
 		Problem* problem;
 		double* igd_value;
+		pybind11::array_t<double> initial_pop;
+
 
 		EMOCParameters() 
 		{ 

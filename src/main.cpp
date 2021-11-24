@@ -213,11 +213,12 @@ EMOCResult EMOCTestRun(EMOCParameters *parameter)
 	int obj_num = parameter->objective_num;
 	int max_eval = parameter->max_evaluation;
 	int output_interval = parameter->output_interval;
+	pybind11::array_t<double>& initial_pop = parameter->initial_pop;
 
 	// temp
 	randomize();
 	parameter->igd_value = (double*)malloc(sizeof(double) * parameter->runs_num);
-	//
+	
 
 	EMOCResult result;
 
@@ -231,13 +232,13 @@ EMOCResult EMOCTestRun(EMOCParameters *parameter)
 		// algorithm main entity
 		g_GlobalSettingsArray[thread_id] = new emoc::Global(algorithm_name, problem_name, population_num, dec_num, obj_num, max_eval, thread_id, output_interval, run);
 		
-		if (parameter->problem)
-		{
-			g_GlobalSettingsArray[thread_id]->SetProblem(parameter->problem);
-		}
-		//else
-		//	std::cout << "problem is null\n";
+		// check setting problem and Init, Init must behind the SetProblem
+		if (parameter->problem)	g_GlobalSettingsArray[thread_id]->SetProblem(parameter->problem);
+		g_GlobalSettingsArray[thread_id]->Init();
 		
+		// check setting initial population
+		if (initial_pop.size() > 0)	g_GlobalSettingsArray[thread_id]->SetInitialPop(initial_pop);
+
 		g_GlobalSettingsArray[thread_id]->Start();
 
 		end = clock();
@@ -249,9 +250,10 @@ EMOCResult EMOCTestRun(EMOCParameters *parameter)
 		//double gd = emoc::CalculateGD(g_GlobalSettingsArray[thread_id]->parent_population_.data(), g_GlobalSettingsArray[thread_id]->population_num_, obj_num, problem_name);
 		//double hv = emoc::CalculateHV(g_GlobalSettingsArray[thread_id]->parent_population_.data(), g_GlobalSettingsArray[thread_id]->population_num_, obj_num);
 		//double spacing = emoc::CalculateSpacing(g_GlobalSettingsArray[thread_id]->parent_population_.data(), g_GlobalSettingsArray[thread_id]->population_num_, obj_num);
-
+		//std::cout << "IGD Value:" << igd << "\n";
 		printf("[%dth run] runtime: %fs\n", run, time);
 
+		// collect results
 		result.pop_num = g_GlobalSettingsArray[thread_id]->algorithm_->real_popnum_;
 		for (int j = 0; j < result.pop_num; j++)
 		{
@@ -310,7 +312,8 @@ PYBIND11_MODULE(EMOC, m) {
 		.def_readwrite("objective_num", &EMOCParameters::objective_num)
 		.def_readwrite("max_evaluation", &EMOCParameters::max_evaluation)
 		.def_readwrite("output_interval", &EMOCParameters::output_interval)
-		.def_readwrite("problem", &EMOCParameters::problem);
+		.def_readwrite("problem", &EMOCParameters::problem)
+		.def_readwrite("initial_pop", &EMOCParameters::initial_pop);
 		//.def_readwrite("is_open_multithread", &EMOCParameters::is_open_multithread)
 		//.def_readwrite("thread_num", &EMOCParameters::thread_num)
 		//.def_readwrite("igd_value", &EMOCParameters::igd_value)

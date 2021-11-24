@@ -21,7 +21,7 @@ namespace emoc {
 
 	void Algorithm::PrintPop()
 	{
-		for (int i = 0; i < 2; ++i)
+		for (int i = 0; i < 20; ++i)
 		{
 			std::cout << "population[" << i << "]: \n";
 			std::cout << "--dec--:";

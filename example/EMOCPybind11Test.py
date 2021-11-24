@@ -79,7 +79,11 @@ class MyUF1(EMOC.Problem):
 
 # 设置问题
 myProblem = MyUF1(parameter.decision_num,parameter.objective_num)
-# parameter.problem = myProblem
+parameter.problem = myProblem
+
+# 设置初始种群
+initial_pop = np.random.random((100,10))
+parameter.initial_pop = initial_pop
 
 result = EMOC.EMOCTestRun(parameter)
 print(result.dec)

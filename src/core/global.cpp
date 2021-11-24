@@ -9,7 +9,7 @@
 
 namespace emoc {
 
-	Global::Global(const char *algorithn_name, const char *problem_name, int population_num,
+	Global::Global(const char* algorithn_name, const char* problem_name, int population_num,
 		int dec_num, int obj_num, int max_evaluation, int thread_id, int output_interval, int run_id) :
 		algorithm_name_(algorithn_name),
 		problem_name_(problem_name),
@@ -19,7 +19,8 @@ namespace emoc {
 		max_evaluation_(max_evaluation),
 		thread_id_(thread_id),
 		output_interval_(output_interval),
-		run_id_(run_id)
+		run_id_(run_id),
+		is_pop_initialized_(false)
 	{
 		iteration_num_ = 0;
 		current_evaluation_ = 0;
@@ -35,10 +36,10 @@ namespace emoc {
 		pm_parameter_.muatation_pro = 1.0 / (double)dec_num;
 		pm_parameter_.eta_m = 20.0;
 
-		//temp
+		// temp
 		problem_ = nullptr;
+		AllocateMemory();
 
-		Init();
 	}
 
 	Global::~Global()
@@ -48,9 +49,12 @@ namespace emoc {
 
 	void Global::InitializePopulation(Individual **pop,int pop_num)
 	{
-		for (int i = 0; i < pop_num; ++i)
+		if (!is_pop_initialized_)
 		{
-			InitializeIndividual(pop[i]);
+			for (int i = 0; i < pop_num; ++i)
+			{
+				InitializeIndividual(pop[i]);
+			}
 		}
 	}
 
@@ -64,17 +68,6 @@ namespace emoc {
 
 	void Global::Start()
 	{
-		if (problem_ == nullptr)
-		{
-			InitializeProblem();
-			SetDecBound();
-		}
-		//std::cout << "Initialize Problem Successfully!" << std::endl;
-		InitializeAlgorithm();
-		//std::cout << "Initialize Algorithm Successfully!" << std::endl;
-		// 
-		//std::cout << "Set Bound Successfully!" << std::endl;
-
 
 		algorithm_->Run();
 	}
@@ -101,6 +94,37 @@ namespace emoc {
 	
 	}
 
+	void Global::SetInitialPop(pybind11::array_t<double>& initial_pop)
+	{
+		//std::cout << "Use Customed Initial Population...\n";
+		// run the default initialze first, need the decision boundary has been setted
+		for (int i = 0; i < population_num_; ++i)
+		{
+			InitializeIndividual(parent_population_[i]);
+		}
+
+		pybind11::buffer_info buf1 = initial_pop.request();
+		if (buf1.ndim != 2) throw std::runtime_error("initial population dims must be 2!\n");
+
+		int initial_pop_num = buf1.shape[0];
+		int initial_dec_dim = buf1.shape[1];
+		if (initial_pop_num > population_num_) throw std::runtime_error("initial population number is larger than the setted parameter!\n");
+		if (initial_dec_dim != dec_num_) throw std::runtime_error("initial population decision dimensions is not equal to the setted parameter!\n");
+
+		double* ptr1 = (double*)buf1.ptr;
+		for (int i = 0; i < initial_pop_num; i++)
+		{
+			for (int j = 0; j < initial_dec_dim; j++)
+			{
+				auto value1 = ptr1[i * initial_dec_dim + j];
+				parent_population_[i]->dec_[j] = value1;
+			}
+		}
+
+		is_pop_initialized_ = true;
+		//std::cout << "Customed Initial Population Set successfully\n";
+	}
+
 	double Global::RecordFileTime()
 	{
 		return algorithm_->record_file_time_;
@@ -108,7 +132,17 @@ namespace emoc {
 
 	void Global::Init()
 	{
-		AllocateMemory();
+
+		if (problem_ == nullptr)
+		{
+			InitializeProblem();
+			SetDecBound();
+		}
+		//std::cout << "Initialize Problem Successfully!" << std::endl;
+		InitializeAlgorithm();
+		//std::cout << "Initialize Algorithm Successfully!" << std::endl;
+		// 
+		//std::cout << "Set Bound Successfully!" << std::endl;
 	}
 
 	void Global::SetDecBound()
