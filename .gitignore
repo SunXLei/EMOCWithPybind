@@ -1,0 +1,16 @@
+# Directories
+.vs/
+.vscode/
+build/
+TEMPTEST/
+BUILDBACKUP/
+plotfile/
+output/
+
+# Files 
+*.user
+build32.bat
+EMOC.exe
+gnulotTest.cpp
+main_backup.cpp
+matplotlibcpp.h
