@@ -8,18 +8,6 @@ EMOC is a multi-objective optimization library written in c++11 which involves s
 
 The CMakeLists.txt file is provided to build project.
 
-For **windows**, we recommend  use visual studio 2017 or later version to build project:
-
-```c++
-mkdir build
-cd build
-cmake -G "Visual Studio 15 2017" ..
-```
-
-then open the generated .sln file and click build button, you can find the .exe file has already in the project directory. 
-
-
-
 For **linux**, compile the project with following command:
 
 ```c++
@@ -29,159 +17,95 @@ cmake ..
 make -j4
 ```
 
-the compiled executable file EMOC will appear in the project directory.
+the compiled dynamic link library EMOC.blablabla.so will appear in build directory. You can use `move` command to rename the file to `EMOC.so`
 
   
 
 ## Usage
 
-When you have built the project, you can run the executable file directly with some default parameters settings, e.g.:
+There is a simple usage example in example directory, Note the `EMOC.so` is in the same directory with python file.
 
-for windows:
 
-```c++
-// in the project directory
-EMOC.exe
+
+We first import the library:
+
+```python
+import EMOC
 ```
 
-for linux:
+Create a `EMOCParameters`  object and set the parameters:
 
-```c++
-// in the project directory
-./EMOC
+```python
+parameter = EMOC.EMOCParameters()
+parameter.algorithm_name = "MOEAD"
+parameter.problem_name = "zdt1"
+parameter.population_num = 100
+parameter.decision_num = 10
+parameter.objective_num = 2
+parameter.max_evaluation = 25000
+parameter.output_interval = 100
 ```
 
+You can also define your own problems by implement a class inherited from `EMOC.Problem`:
 
+```python
+class MyUF1(EMOC.Problem):
+    def __init__(self, dec_num, obj_num):
+        super(MyUF1, self).__init__(dec_num,obj_num)
+        lower_bound = [-1] * dec_num
+        lower_bound[0] = 0
+        self.lower_bound = lower_bound
+        self.upper_bound = [1] * dec_num
 
-Or you can set some basic parameters with parameter value pair, e.g.:
+    def CalObj(self, ind):
+        x = ind.dec
+        obj = ind.obj
+        # print("here\n")
+        k = self.dec_num-self.obj_num+1
+        sum1 = 0
+        count1 = 0
+        sum2 = 0
+        count2 = 0
+        for i in range(2,self.dec_num+1):
+            yj = x[i-1] - np.sin(6.0 * np.pi * x[0] + i * np.pi / self.dec_num)
+            yj = yj * yj
+            if i % 2 == 0:
+                sum2 += yj
+                count2 = count2 + 1
+            else:
+                sum1 += yj
+                count1 += 1
 
-for windows:
-
-```c++
-// in the project directory
-EMOC.exe -algorithm moead -problem zdt3 -N 300 -D 30
+        obj[0] = x[0] + 2.0 * sum1 / count1
+        obj[1] = 1.0 - np.sqrt(x[0]) + 2.0 * sum2 / count2
 ```
 
-for linux:
+you must set the decision bound in constructor function and implement the `CalObj` virtual function.
 
-```c++
-// in the project directory
-./EMOC -algorithm moeadde -problem zdt3 -N 300 -D 30 -evaluation 300000
+**Note: 1. the bound must be set with an entire list**
+
+**Note: 2. the calculated obj result must be set one by one as the example code. (but you can calculate it entirely with some useful numpy function and then set it)**
+
+
+
+When you have implemented your own problem, you can set it simply by:
+
+```python
+myProblem = MyUF1(10, 2)
+parameter.problem = myProblem
 ```
 
-All the optional parameters are listed bellow:
+At last, call the `EMOCTestRun`:
 
-| Parameter name | Description                        |
-| -------------- | ---------------------------------- |
-| -algorithm     | Algorithm name                     |
-| -problem       | Problem name                       |
-| -N             | Population size                    |
-| -D             | Number of variables                |
-| -M             | Number of objectives               |
-| -evaluation    | Number of evaluations              |
-| -run           | Run number                         |
-| -save          | The interval of saving populations |
-| -thread        | Number of thread                   |
-
-
-
-Another way to use EMOC is setting the parameters within a config file, and run with '-file filepath'
-
-```c++
-./EMOC -file ./src/config/config.txt
+```python
+result = EMOC.EMOCTestRun(parameter)
+print(result.dec)
+print(result.obj)
+print(result.pop_num)
 ```
 
-there is an example of config file in the corresponding directory.
+The result has 3 member variables: 
 
-
-
-
-
-## TODO List
-
-**整体方面：**
-
-- [x] Code Review 对整体代码做一个回顾，是否可以改进，局部结构是否可以改善，细节部分代码是否可以更加简洁。
-- [x] 算法的准确性及其效率的review，从老的算法包移植过来的算法不不知道是否正确。
-- [ ] Indicator的计算，PF可否用公式计算，不用文件读写，以及新的indicator的添加，接口上的real_pop_num问题。
-- [x] Linux的移植
-- [ ] ...
-
-**功能方面：**
-
-- [x] Table样式， note：看了一遍demo code，没有这种合并单元格的效果，可能可以提供过nested table来hack一个，最好自己抽象出来一个Experiment的Table类
-- [x] 算法和问题类别
-- [x] 画图的canvas大小，位置，让用户指定
-- [x] EMOC不同状态对应的有些窗口要Disable，防止用户误操作
-- [x] 一些metric计算之后的cache，防止重复计算，Note：现在SingleThreadResult用了unordered_map，MultiThreadResult也可以考虑相应更改一下，不要用一个额外的std::vector<bool>来表示是不是存了，直接用哈希表就行，**算了还是不用了，因为用了要提供一个额外的参数表示一共有多少run，不如直接size来的简洁明了**
-- [x] SetUIPanelCurrentEvaluation()和CheckPauseAndStop()在指定条件下再调用（在Alogrithm的IsTermination里面）。包括EMOC各种运行状态的正确设置。
-- [x] 提供一些提示，让用户可以知道Popup需要右键点击才会出现，或者引入icon button
-- [x] Experiment下early stop之后后序任务不应再执行，应该直接停止for循环
-- [ ] 画图和实验模块给一个简略的进度条。 note：不怎么重要，先不急
-- [ ] 各个Panel下window的大小及其位置的事先固定
-- [x] 画图文件存储的优化，和本身种群的Track不要重复。另外都画图用脚本，不要有的是指令，有的是命令，保持统一
-- [x] 科学计数法显示，以及MEDIAN,IQR等等
-- [x] 最佳结果标bold（添加额外字体）
-- [x] 实验模块的假设检验统计测试
-- [x] 实验结果table的导出功能
-- [x] 参数合法性检验，以及对应的警告
-- [x] 统计测试的比较算法问题
-- [x] 命令行调用设计 cxxopt还不错可以用一下
-- [x] hv的计算，好了但没完全好
-- [ ] python调用接口的重新设计
-- [ ] 函数和问题的注册，可能要用到反射？之后再看
-- [ ] 算法自身的参数接口 （可以改，但有些麻烦，暂时没必要）
-- [ ] 实验模块的画图分析  （暂时不知道画什么，不着急搞）
-- [ ] ...
-
-**Bug Fix：** 
-
-- [x] ImGUI在某些条件下会出现Begin与End不对等的情况
-- [x] WFG多线程下崩溃， Fixed：全局变量的访问问题
-- [ ] Clock计时在多线程条件下表现不正确
-- [ ] 实验模块问题参数设置在收起header之后对popup选中delete的时有些奇怪的表现（不是参数错误，是不正常的收起，可能是ImGui自己的问题，初步猜测是ImGui的ID问题，因为我是根据index设置id的，删除一个只会，后面可能会和删除的那个id一样，继承了之前的状态？這個bug問題不大,可以暂时不用管）
-- [x] test module plot判断plot metric name的时候不要直接比指针
-- [x] Test module下如果连续画同一个pop的metric，plot会不work。Fixed:因为同一个pop的metric存的file的name是一样，会出现data invalid（因为可能要画的时候，还正在写），改为了用selected_run的index来命名文件。
-- [x] 运行结果的description显示不正确。 Fixed：指针在vector扩容时会变成野指针
-- [x] Popup之后点击delete button后数组越界。Fixed：如果删除了，在当前帧不再继续显示
-- [x] 单线程运行结果在table中显示不正确。 Fixed：用**引用**返回时会因为vector扩容出现内存泄露
-- [ ] ...
-- [ ] 
-
-**算法添加：**
-
-- [ ] NSGA3
-- [ ] SPEA_SDK
-- [ ] SPEA_R
-- [ ] PICEA_G
-- [ ] TWO_ARCH2
-- [ ] ONEBYONE
-- [ ] VaEA
-- [ ] EFR_PR
-- [ ] KnEA
-- [ ] BORG
-- [ ] tDEA
-- [ ] MTS
-- [ ] RVEA
-- [ ] MOEADPAS
-- [ ] MOEADSTM
-- [ ] MOEADD
-- [ ] MOEADM2M
-- [ ] MOEADAWA
-- [ ] MaOEAIT
-- [ ] MaOEA_IGD
-- [x] MOEADCDE
-- [x] MOEADDYTS
-
-**问题添加：**
-
-- [ ] 
-
-**指标添加：**
-
-- [ ] 
-
-
-
-
-
+- dec for decision variables
+- obj for objective results
+- pop_num for population number
