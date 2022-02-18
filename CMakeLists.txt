@@ -61,7 +61,7 @@ set(SRC ${SRC}
 ## add_executable(EMOC ${HEADERS} ${SRC})
 
 # add glfw source code
-## add_subdirectory(vendor/glfw)
+add_subdirectory(vendor/glfw)
 
 # add pybind11
 add_subdirectory(vendor/pybind11)
