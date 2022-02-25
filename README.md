@@ -8,14 +8,7 @@ EMOC is a multi-objective optimization library written in c++11 which involves s
 
 The CMakeLists.txt file is provided to build project.
 
-For **linux**, compile the project with following command:
-
-```c++
-mkdir build
-cd build
-cmake ..
-make -j4
-```
+For **linux**, directly use the **build.sh** file
 
 the compiled dynamic link library EMOC.blablabla.so will appear in build directory. You can use `move` command to rename the file to `EMOC.so`
 
