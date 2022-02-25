@@ -5,7 +5,6 @@ import operator
 sys.path.append("./")
 import EMOC
 
-# help(EMOC.EMOCTestRun)
 class MyProblem(EMOC.Problem):
     def __init__(self, dec_num, obj_num):
         super(MyProblem, self).__init__(dec_num,obj_num)

@@ -1,6 +1,6 @@
 # EMOC
 
-EMOC is a multi-objective optimization library written in c++11 which involves some basic evolutionary algorithms (now is 10+). 
+EMOC is a multi-objective optimization library written in c++11 which involves some basic evolutionary algorithms (now is 20+). 
 
 
 
@@ -59,9 +59,7 @@ class MyUF1(EMOC.Problem):
 
     def CalObj(self, ind):
         x = ind.dec
-        obj = ind.obj
-        # print("here\n")
-        k = self.dec_num-self.obj_num+1
+        temp_obj = [0] * self.obj_num
         sum1 = 0
         count1 = 0
         sum2 = 0
@@ -75,37 +73,37 @@ class MyUF1(EMOC.Problem):
             else:
                 sum1 += yj
                 count1 += 1
-
-        obj[0] = x[0] + 2.0 * sum1 / count1
-        obj[1] = 1.0 - np.sqrt(x[0]) + 2.0 * sum2 / count2
+        temp_obj[0] = x[0] + 2.0 * sum1 / count1
+        temp_obj[1] = 1.0 - np.sqrt(x[0]) + 2.0 * sum2 / count2
+        ind.obj = temp_obj
 ```
 
 you must set the decision bound in constructor function and implement the `CalObj` virtual function.
 
 **Note: 1. the bound must be set with an entire list**
 
-**Note: 2. the calculated obj result must be set one by one as the example code. (but you can calculate it entirely with some useful numpy function and then set it)**
+**Note: 2. the calculated obj result must be set as a whole too**
 
 
 
 When you have implemented your own problem, you can set it simply by:
 
 ```python
-myProblem = MyUF1(10, 2)
-parameter.problem = myProblem
+myProblem = MyUF1(para.decision_num,para.objective_num)
+para.SetProblem(myProblem)
 ```
 
-At last, call the `EMOCTestRun`:
+At last, create EMOCManager instance, set the parameter and run:
 
 ```python
-result = EMOC.EMOCTestRun(parameter)
-print(result.dec)
-print(result.obj)
-print(result.pop_num)
+EMOCManager = EMOC.EMOCManager()
+EMOCManager.SetTaskParameters(para)
+EMOCManager.Run()
+result = EMOCManager.GetResult()
+print("IGD: ",result.igd)
+print("HV: ",result.hv)
+print("Runtime: ",result.runtime)
+print("Population Number: ",result.pop_num)
+print("Population Decisions: ",result.pop_decs)
+print("Population Objectives: ",result.pop_objs)
 ```
-
-The result has 3 member variables: 
-
-- dec for decision variables
-- obj for objective results
-- pop_num for population number
